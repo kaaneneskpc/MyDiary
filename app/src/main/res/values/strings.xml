@@ -6,4 +6,12 @@
     <string name="please_wait_text">Please wait...</string>
     <string name="google_logo_text">Google Logo</string>
     <string name="logout_text">Logout</string>
+    <string name="home_topBar_title_text">Diary</string>
+    <string name="sign_out_text">Sign Out</string>
+    <string name="sign_out_confirm_text">Are you sure want to Sign Out from your Google Account?</string>
+    <string name="delete_all_diaries_text">Delete All Diaries</string>
+    <string name="yes_text">Yes</string>
+    <string name="no_text">No</string>
+    <string name="my_diary_text">My Diary</string>
+    <string name="lorem_ipsum_text">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</string>
 </resources>
