@@ -1,9 +1,13 @@
 package com.example.mydiary.navigation
 
+import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,10 +23,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.mydiary.R
 import com.example.mydiary.core.data.repository.MongoDB
+import com.example.mydiary.core.model.Diary
+import com.example.mydiary.core.model.Mood
+import com.example.mydiary.core.model.RequestState
 import com.example.mydiary.presentation.components.DisplayAlertDialog
 import com.example.mydiary.presentation.screens.auth.AuthenticationScreen
 import com.example.mydiary.presentation.screens.auth.AuthenticationViewModel
 import com.example.mydiary.presentation.screens.home.HomeScreen
+import com.example.mydiary.presentation.screens.home.HomeViewModel
+import com.example.mydiary.presentation.screens.write.WriteScreen
+import com.example.mydiary.presentation.screens.write.WriteViewModel
 import com.example.mydiary.utils.Constants.APP_ID
 import com.example.mydiary.utils.Constants.WRITE_SCREEN_ARGUMENT_KEY
 import com.stevdzasan.messagebar.rememberMessageBarState
@@ -34,7 +44,11 @@ import kotlinx.coroutines.withContext
 import java.lang.Exception
 
 @Composable
-fun SetupNavGraph(startDestination: String, navController: NavHostController) {
+fun SetupNavGraph(
+    startDestination: String,
+    navController: NavHostController,
+    onDataLoaded: () -> Unit
+) {
     NavHost(
         startDestination = startDestination,
         navController = navController
@@ -43,23 +57,33 @@ fun SetupNavGraph(startDestination: String, navController: NavHostController) {
             navigateToHome = {
                 navController.popBackStack()
                 navController.navigate(Screens.Home.route)
-            }
+            },
+             onDataLoaded = onDataLoaded
         )
         homeRoute(
             navigateToWrite = {
                 navController.navigate(Screens.Write.route)
             },
+            navigateToWriteWithArgs = {
+                navController.navigate(Screens.Write.passDiaryId(diaryId = it))
+            },
             navigateToAuth = {
                 navController.popBackStack()
                 navController.navigate(Screens.Authentication.route)
+            },
+            onDataLoaded = onDataLoaded
+        )
+        writeRoute(
+            onBackPressed = {
+                navController.popBackStack()
             }
         )
-        writeRoute()
     }
 }
 
 fun NavGraphBuilder.authenticationRoute(
-    navigateToHome: () -> Unit
+    navigateToHome: () -> Unit,
+    onDataLoaded: () -> Unit
 ) {
     composable(route = Screens.Authentication.route) {
         val authViewModel: AuthenticationViewModel = viewModel()
@@ -67,6 +91,11 @@ fun NavGraphBuilder.authenticationRoute(
         val authenticated by authViewModel.authenticated
         val oneTapState = rememberOneTapSignInState()
         val messageBarState = rememberMessageBarState()
+        
+        LaunchedEffect(key1 = Unit) {
+            onDataLoaded()
+        }
+        
         AuthenticationScreen(
             authenticated = authenticated,
             loadingState = loadingState,
@@ -100,15 +129,25 @@ fun NavGraphBuilder.authenticationRoute(
 
 fun NavGraphBuilder.homeRoute(
     navigateToWrite: () -> Unit,
-    navigateToAuth: () -> Unit
+    navigateToWriteWithArgs: (String) -> Unit,
+    navigateToAuth: () -> Unit,
+    onDataLoaded: () -> Unit
 ) {
     composable(route = Screens.Home.route) {
-
+        val viewModel: HomeViewModel = viewModel()
+        val diaries by viewModel.diaries
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         var signOutDialogOpened by remember { mutableStateOf(false) }
         val scope = rememberCoroutineScope()
 
+        LaunchedEffect(key1 = diaries) {
+            if(diaries !is RequestState.Loading) {
+                onDataLoaded()
+            }
+        }
+
         HomeScreen(
+            diaries = diaries,
             drawerState = drawerState,
             onMenuClicked = {
                 scope.launch {
@@ -117,7 +156,8 @@ fun NavGraphBuilder.homeRoute(
             },
             onSignOutClicked = { signOutDialogOpened = true },
             onDeleteAllClicked = {},
-            navigateToWrite = navigateToWrite
+            navigateToWrite = navigateToWrite,
+            navigateToWriteWithArgs = navigateToWriteWithArgs
         )
         
         LaunchedEffect(key1 = Unit) {
@@ -145,7 +185,8 @@ fun NavGraphBuilder.homeRoute(
 
 }
 
-fun NavGraphBuilder.writeRoute() {
+@OptIn(ExperimentalFoundationApi::class)
+fun NavGraphBuilder.writeRoute(onBackPressed: () -> Unit) {
     composable(
         route = Screens.Write.route,
         arguments = listOf(navArgument(name = WRITE_SCREEN_ARGUMENT_KEY) {
@@ -154,6 +195,26 @@ fun NavGraphBuilder.writeRoute() {
             defaultValue = null
         })
     ) {
+        val viewModel: WriteViewModel = viewModel()
+        val uiState =  viewModel.uiState
+        val pagerState = rememberPagerState(pageCount = { Mood.values().size })
+        val pageNumber by remember { derivedStateOf { pagerState.currentPage }}
 
+        WriteScreen(
+            uiState = uiState,
+            pagerState = pagerState,
+            moodName = { Mood.values()[pageNumber].name },
+            onTitleChanged = { viewModel.setTitle(title = it) },
+            onDescriptionChanged = { viewModel.setDescription(description = it) },
+            onDeleteConfirmed = {},
+            onBackPressed = onBackPressed,
+            onSaveClicked = {
+                viewModel.insertDiary(
+                    diary = it.apply { mood = Mood.values()[pageNumber].name },
+                    onSuccess = { onBackPressed() },
+                    onError = {}
+                )
+            }
+        )
     }
 }

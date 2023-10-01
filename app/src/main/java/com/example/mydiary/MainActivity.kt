@@ -12,26 +12,30 @@ import com.example.mydiary.navigation.Screens
 import com.example.mydiary.navigation.SetupNavGraph
 import com.example.mydiary.ui.theme.MydiaryTheme
 import com.example.mydiary.utils.Constants.APP_ID
+import com.google.firebase.FirebaseApp
 import io.realm.kotlin.mongodb.App
 
 class MainActivity : ComponentActivity() {
+    private var keepSplashOpened = true
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        installSplashScreen()
+        installSplashScreen().setKeepOnScreenCondition { keepSplashOpened }
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        FirebaseApp.initializeApp(this)
         MongoDB.configureTheRealm()
         setContent {
             MydiaryTheme {
-                ApplyNavController()
+                val navController = rememberNavController()
+                SetupNavGraph(
+                    startDestination = getStartDestination(),
+                    navController = navController,
+                    onDataLoaded = {
+                        keepSplashOpened = false
+                    }
+                )
             }
         }
     }
-}
-
-@Composable
-private fun ApplyNavController() {
-    val navController = rememberNavController()
-    SetupNavGraph(startDestination = getStartDestination(), navController = navController)
 }
 
 private fun getStartDestination(): String {

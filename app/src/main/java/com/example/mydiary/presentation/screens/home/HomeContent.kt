@@ -16,6 +16,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.mydiary.core.model.Diary
 import com.example.mydiary.presentation.components.DiaryHolder
+import com.example.mydiary.utils.toRealmInstant
+import java.time.Instant
 import java.time.LocalDate
 
 @OptIn(ExperimentalFoundationApi::class)
