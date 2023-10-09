@@ -13,6 +13,7 @@ import com.example.mydiary.core.model.GalleryImage
 import com.example.mydiary.core.model.Mood
 import com.example.mydiary.core.model.RequestState
 import com.example.mydiary.utils.Constants.WRITE_SCREEN_ARGUMENT_KEY
+import com.example.mydiary.utils.extensions.orDefaultAny
 import com.example.mydiary.utils.toRealmInstant
 import com.google.firebase.auth.FirebaseAuth
 import io.realm.kotlin.types.RealmInstant
@@ -107,26 +108,24 @@ class WriteViewModel(
         }
     }
 
-    fun insertDiary(
+    private suspend fun insertDiary(
         diary: Diary,
         onSuccess: () -> Unit,
         onError: (String) -> Unit,
     ) {
-        viewModelScope.launch {
-            val result = MongoDB.insertDiary(diary = diary.apply {
-                uiState.updatedDateTime?.let {
-                    date = uiState.updatedDateTime!!
-                }
-            })
-            if (result is RequestState.Success) {
-                // uploadImagesToFirebase()
-                withContext(Dispatchers.Main) {
-                    onSuccess()
-                }
-            } else if (result is RequestState.Error) {
-                withContext(Dispatchers.Main) {
-                    onError(result.error.message.toString())
-                }
+        val result = MongoDB.insertDiary(diary = diary.apply {
+            uiState.updatedDateTime?.let {
+                date = it
+            }
+        })
+        if (result is RequestState.Success) {
+            // uploadImagesToFirebase()
+            withContext(Dispatchers.Main) {
+                onSuccess()
+            }
+        } else if (result is RequestState.Error) {
+            withContext(Dispatchers.Main) {
+                onError(result.error.message.toString())
             }
         }
     }
@@ -137,12 +136,8 @@ class WriteViewModel(
         onError: (String) -> Unit
     ) {
         val result = MongoDB.updateDiary(diary = diary.apply {
-            _id = ObjectId.invoke(uiState.selectedDiaryId!!)
-            date = if (uiState.updatedDateTime != null) {
-                uiState.updatedDateTime!!
-            } else {
-                uiState.selectedDiary!!.date
-            }
+            _id = uiState.selectedDiaryId.let { ObjectId.invoke(it.orEmpty()) }
+            date = uiState.updatedDateTime ?: uiState.selectedDiary.let { it!!.date }
         })
         if (result is RequestState.Success) {
             /*uploadImagesToFirebase()
@@ -162,8 +157,8 @@ class WriteViewModel(
         onError: (String) -> Unit
     ) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (uiState.selectedDiaryId != null) {
-                val result = MongoDB.deleteDiary(id = ObjectId.invoke(uiState.selectedDiaryId!!))
+            uiState.selectedDiaryId?.let {
+                val result = MongoDB.deleteDiary(id = ObjectId.invoke(it))
                 if (result is RequestState.Success) {
                     withContext(Dispatchers.Main) {
                         uiState.selectedDiary?.let {

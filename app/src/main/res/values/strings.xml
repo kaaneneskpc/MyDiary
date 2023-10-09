@@ -15,4 +15,5 @@
     <string name="my_diary_text">My Diary</string>
     <string name="lorem_ipsum_text">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</string>
     <string name="error_page_title">Error</string>
+    <string name="deleted_text">Deleted</string>
 </resources>

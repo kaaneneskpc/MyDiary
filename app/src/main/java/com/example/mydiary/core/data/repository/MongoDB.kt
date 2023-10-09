@@ -130,16 +130,14 @@ object MongoDB : MongoRepository {
         return user?.let {
             realm.write {
                 val queriedDiary = query<Diary>(query = "_id == $0", diary._id).first().find()
-                if (queriedDiary != null) {
+                queriedDiary?.let {
                     queriedDiary.title = diary.title
                     queriedDiary.description = diary.description
                     queriedDiary.mood = diary.mood
                     queriedDiary.images = diary.images
                     queriedDiary.date = diary.date
                     RequestState.Success(data = queriedDiary)
-                } else {
-                    RequestState.Error(error = Exception("Queried Diary does not exist."))
-                }
+                } ?: RequestState.Error(error = Exception("Queried Diary does not exist."))
             }
         } ?: RequestState.Error(UserNotAuthenticatedException())
     }
@@ -147,19 +145,15 @@ object MongoDB : MongoRepository {
     override suspend fun deleteDiary(id: ObjectId): RequestState<Boolean> {
         return user?.let { user ->
             realm.write {
-                val diary =
-                    query<Diary>(query = "_id == $0 AND ownerId == $1", id, user.id)
-                        .first().find()
-                if (diary != null) {
+                val diary = query<Diary>(query = "_id == $0 AND ownerId == $1", id, user.id).first().find()
+                diary?.let {
                     try {
-                        delete(diary)
+                        delete(it)
                         RequestState.Success(data = true)
                     } catch (e: Exception) {
                         RequestState.Error(e)
                     }
-                } else {
-                    RequestState.Error(Exception("Diary does not exist."))
-                }
+                } ?: RequestState.Error(Exception("Diary does not exist."))
             }
         } ?: RequestState.Error(UserNotAuthenticatedException())
     }

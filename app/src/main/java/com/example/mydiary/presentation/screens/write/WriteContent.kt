@@ -1,6 +1,5 @@
 package com.example.mydiary.presentation.screens.write
 
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*

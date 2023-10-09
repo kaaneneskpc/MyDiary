@@ -35,7 +35,7 @@ import java.util.*
 fun WriteTopBar(
     selectedDiary: Diary?,
     moodName: () -> String,
-    // onDateTimeUpdated: (ZonedDateTime) -> Unit,
+    onDateTimeUpdated: (ZonedDateTime) -> Unit,
     onDeleteConfirmed: () -> Unit,
     onBackPressed: () -> Unit
 ) {
@@ -55,11 +55,11 @@ fun WriteTopBar(
     }
     var dateTimeUpdated by remember { mutableStateOf(false) }
     val selectedDiaryDateTime = remember(selectedDiary) {
-        selectedDiary?.let {
+        if (selectedDiary != null) {
             DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a", Locale.getDefault())
                 .withZone(ZoneId.systemDefault())
                 .format(selectedDiary.date.toInstant())
-        } ?: "$formattedDate, $formattedTime"
+        } else "Unknown"
     }
     CenterAlignedTopAppBar(
         navigationIcon = {
@@ -83,7 +83,9 @@ fun WriteTopBar(
                 )
                 Text(
                     modifier = Modifier.fillMaxWidth(),
-                    text = selectedDiaryDateTime,
+                    text = if (selectedDiary != null && dateTimeUpdated) "$formattedDate, $formattedTime"
+                    else if (selectedDiary != null) selectedDiaryDateTime
+                    else "$formattedDate, $formattedTime",
                     style = TextStyle(fontSize = MaterialTheme.typography.bodySmall.fontSize),
                     textAlign = TextAlign.Center
                 )
@@ -95,13 +97,13 @@ fun WriteTopBar(
                     currentDate = LocalDate.now()
                     currentTime = LocalTime.now()
                     dateTimeUpdated = false
-                   /* onDateTimeUpdated(
+                    onDateTimeUpdated(
                         ZonedDateTime.of(
                             currentDate,
                             currentTime,
                             ZoneId.systemDefault()
                         )
-                    ) */
+                    )
                 }) {
                     Icon(
                         imageVector = Icons.Default.Close,
@@ -118,7 +120,7 @@ fun WriteTopBar(
                     )
                 }
             }
-           if (selectedDiary != null) {
+            if (selectedDiary != null) {
                 DeleteDiaryAction(
                     selectedDiary = selectedDiary,
                     onDeleteConfirmed = onDeleteConfirmed
@@ -141,13 +143,13 @@ fun WriteTopBar(
         selection = ClockSelection.HoursMinutes { hours, minutes ->
             currentTime = LocalTime.of(hours, minutes)
             dateTimeUpdated = true
-            /* onDateTimeUpdated(
+            onDateTimeUpdated(
                 ZonedDateTime.of(
                     currentDate,
                     currentTime,
                     ZoneId.systemDefault()
                 )
-            ) */
+            )
         }
     )
 }

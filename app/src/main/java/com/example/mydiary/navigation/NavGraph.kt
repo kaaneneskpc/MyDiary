@@ -1,6 +1,7 @@
 package com.example.mydiary.navigation
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.DrawerValue
@@ -13,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
@@ -196,6 +198,7 @@ fun NavGraphBuilder.writeRoute(onBackPressed: () -> Unit) {
         })
     ) {
         val viewModel: WriteViewModel = viewModel()
+        val context = LocalContext.current
         val uiState =  viewModel.uiState
         val pagerState = rememberPagerState(pageCount = { Mood.values().size })
         val pageNumber by remember { derivedStateOf { pagerState.currentPage }}
@@ -206,13 +209,24 @@ fun NavGraphBuilder.writeRoute(onBackPressed: () -> Unit) {
             moodName = { Mood.values()[pageNumber].name },
             onTitleChanged = { viewModel.setTitle(title = it) },
             onDescriptionChanged = { viewModel.setDescription(description = it) },
-            onDeleteConfirmed = {},
+            onDeleteConfirmed = { viewModel.deleteDiary(
+                onSuccess = {
+                    Toast.makeText(context, context.getString(R.string.deleted_text), Toast.LENGTH_SHORT).show()
+                    onBackPressed()
+                },
+                onError = { message ->
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+            ) },
+            onDateTimeUpdated = { viewModel.updateDateTime(it) },
             onBackPressed = onBackPressed,
             onSaveClicked = {
-                viewModel.insertDiary(
+                viewModel.upsertDiary(
                     diary = it.apply { mood = Mood.values()[pageNumber].name },
                     onSuccess = { onBackPressed() },
-                    onError = {}
+                    onError = { message ->
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    }
                 )
             }
         )
