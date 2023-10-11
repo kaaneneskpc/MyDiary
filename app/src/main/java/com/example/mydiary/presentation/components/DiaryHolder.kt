@@ -48,7 +48,7 @@ fun DiaryHolder(diary: Diary, onClick: (String) -> Unit) {
     var galleryLoading by remember { mutableStateOf(false) }
     val downloadedImages = remember { mutableStateListOf<Uri>() }
 
-    /* LaunchedEffect(key1 = galleryOpened) {
+    LaunchedEffect(key1 = galleryOpened) {
         if (galleryOpened && downloadedImages.isEmpty()) {
             galleryLoading = true
             fetchImagesFromFirebase(
@@ -72,7 +72,7 @@ fun DiaryHolder(diary: Diary, onClick: (String) -> Unit) {
                 }
             )
         }
-    } */
+    }
 
     Row(modifier = Modifier
         .clickable(

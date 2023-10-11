@@ -1,6 +1,5 @@
 package com.example.mydiary.navigation
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.rememberPagerState
@@ -16,6 +15,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -25,7 +25,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.mydiary.R
 import com.example.mydiary.core.data.repository.MongoDB
-import com.example.mydiary.core.model.Diary
 import com.example.mydiary.core.model.Mood
 import com.example.mydiary.core.model.RequestState
 import com.example.mydiary.presentation.components.DisplayAlertDialog
@@ -107,7 +106,7 @@ fun NavGraphBuilder.authenticationRoute(
                 oneTapState.open()
                 authViewModel.setLoading(true)
             },
-            onTokenReceived = { tokenId ->
+            onSuccessfulFirebaseSignIn = { tokenId ->
                 authViewModel.signInWithMongoAtlas(
                     tokenId = tokenId,
                     onSuccess = {
@@ -119,6 +118,10 @@ fun NavGraphBuilder.authenticationRoute(
                         authViewModel.setLoading(false)
                     }
                 )
+            },
+            onFailureFirebaseSignIn = {
+                messageBarState.addError(it)
+                authViewModel.setLoading(false)
             },
             onDialogDismissed = { message ->
                 messageBarState.addError(Exception(message))
@@ -197,15 +200,17 @@ fun NavGraphBuilder.writeRoute(onBackPressed: () -> Unit) {
             defaultValue = null
         })
     ) {
-        val viewModel: WriteViewModel = viewModel()
+        val viewModel: WriteViewModel = hiltViewModel()
         val context = LocalContext.current
         val uiState =  viewModel.uiState
         val pagerState = rememberPagerState(pageCount = { Mood.values().size })
+        val galleryState = viewModel.galleryState
         val pageNumber by remember { derivedStateOf { pagerState.currentPage }}
 
         WriteScreen(
             uiState = uiState,
             pagerState = pagerState,
+            galleryState = galleryState,
             moodName = { Mood.values()[pageNumber].name },
             onTitleChanged = { viewModel.setTitle(title = it) },
             onDescriptionChanged = { viewModel.setDescription(description = it) },
@@ -228,7 +233,12 @@ fun NavGraphBuilder.writeRoute(onBackPressed: () -> Unit) {
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     }
                 )
-            }
+            },
+            onImageSelect = {
+                val type = context.contentResolver.getType(it)?.split("/")?.last() ?: "jpg"
+                viewModel.addImage(image = it, imageType = type)
+            },
+            onImageDeleteClicked = { galleryState.removeImage(it) }
         )
     }
 }

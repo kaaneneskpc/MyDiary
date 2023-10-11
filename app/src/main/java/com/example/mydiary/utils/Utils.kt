@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
+import com.example.mydiary.core.data.database.entity.ImageToDelete
+import com.example.mydiary.core.data.database.entity.ImageToUpload
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storageMetadata
 import io.realm.kotlin.types.RealmInstant
@@ -22,7 +24,7 @@ fun fetchImagesFromFirebase(
                     .addOnSuccessListener {
                         Log.d("DownloadURL", "$it")
                         onImageDownload(it)
-                        if (remoteImagePaths.lastIndexOf(remoteImagePaths.last()) == index) {
+                        if (remoteImagePaths.lastIndexOf(remoteImagePaths.lastOrNull()) == index) {
                             onReadyToDisplay()
                         }
                     }.addOnFailureListener {
@@ -33,7 +35,7 @@ fun fetchImagesFromFirebase(
     }
 }
 
-/* fun retryUploadingImageToFirebase(
+fun retryUploadingImageToFirebase(
     imageToUpload: ImageToUpload,
     onSuccess: () -> Unit
 ) {
@@ -52,7 +54,7 @@ fun retryDeletingImageFromFirebase(
     val storage = FirebaseStorage.getInstance().reference
     storage.child(imageToDelete.remoteImagePath).delete()
         .addOnSuccessListener { onSuccess() }
-} */
+}
 
 @SuppressLint("NewApi")
 fun RealmInstant.toInstant(): Instant {
