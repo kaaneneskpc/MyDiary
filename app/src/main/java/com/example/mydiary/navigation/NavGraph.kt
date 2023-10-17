@@ -139,10 +139,12 @@ fun NavGraphBuilder.homeRoute(
     onDataLoaded: () -> Unit
 ) {
     composable(route = Screens.Home.route) {
-        val viewModel: HomeViewModel = viewModel()
+        val viewModel: HomeViewModel = hiltViewModel()
         val diaries by viewModel.diaries
+        val context = LocalContext.current
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         var signOutDialogOpened by remember { mutableStateOf(false) }
+        var deleteAllDialogOpened by remember { mutableStateOf(false) }
         val scope = rememberCoroutineScope()
 
         LaunchedEffect(key1 = diaries) {
@@ -159,8 +161,11 @@ fun NavGraphBuilder.homeRoute(
                     drawerState.open()
                 }
             },
+            dateIsSelected = viewModel.dateIsSelected,
+            onDateSelected = { viewModel.getDiaries(it) },
+            onDateReset = { viewModel.getDiaries() },
             onSignOutClicked = { signOutDialogOpened = true },
-            onDeleteAllClicked = {},
+            onDeleteAllClicked = { deleteAllDialogOpened = true },
             navigateToWrite = navigateToWrite,
             navigateToWriteWithArgs = navigateToWriteWithArgs
         )
@@ -184,6 +189,39 @@ fun NavGraphBuilder.homeRoute(
                         }
                     }
                 }
+            }
+        )
+
+        DisplayAlertDialog(
+            title = stringResource(id = R.string.delete_all_diaries_text),
+            message = context.getString(R.string.delete_all_your_diaries_popup_text),
+            dialogOpened = deleteAllDialogOpened,
+            onDialogClosed = { deleteAllDialogOpened = false },
+            onYesClicked = {
+                viewModel.deleteAllDiaries(
+                    onSuccess = {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.all_diaries_deleted_text),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        scope.launch {
+                            drawerState.close()
+                        }
+                    },
+                    onError = {
+                        Toast.makeText(
+                            context,
+                            if (it.message == context.getString(R.string.no_internet_connection_text))
+                                context.getString(R.string.no_internet_connection_detail_text)
+                            else it.message,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        scope.launch {
+                            drawerState.close()
+                        }
+                    }
+                )
             }
         )
     }

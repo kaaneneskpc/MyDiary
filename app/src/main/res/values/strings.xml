@@ -16,4 +16,8 @@
     <string name="lorem_ipsum_text">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</string>
     <string name="error_page_title">Error</string>
     <string name="deleted_text">Deleted</string>
+    <string name="delete_all_your_diaries_popup_text">Are you sure you want to permanently delete all your diaries?</string>
+    <string name="no_internet_connection_text">No Internet Connection.</string>
+    <string name="no_internet_connection_detail_text">We need an Internet Connection for this operation.</string>
+    <string name="all_diaries_deleted_text">All Diaries Deleted.</string>
 </resources>
